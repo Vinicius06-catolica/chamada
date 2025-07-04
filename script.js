@@ -1,85 +1,114 @@
 document.addEventListener('DOMContentLoaded', () => {
+    const stage = document.getElementById('particle-stage');
     const actionButton = document.getElementById('actionButton');
-    const container = document.getElementById('container');
-    const secondaryMessage = document.getElementById('secondary-message');
-    
+    const finalMessage = document.getElementById('final-message');
+
     const word = 'CHAMADA';
     let currentIndex = 0;
-    const lettersOnScreen = [];
+    const particlesByLetter = []; // Armazena os grupos de partículas de cada letra
 
     const buttonTexts = [
-        "clica aqui",    // Estado inicial
-        "só o começo...",
-        "continue...",
-        "tá curioso(a)?",
-        "falta pouco...",
-        "mais um toque...",
-        "o último."      // Texto antes do último clique
+        "clica aqui", "de novo...", "continue...", "mais uma...", "tá quase...", "só falta uma...", "o último passo..."
     ];
 
     const letterPositions = [
-        { top: '15%', left: '20%' }, // C
-        { top: '70%', left: '80%' }, // H
-        { top: '20%', left: '75%' }, // A
-        { top: '80%', left: '10%' }, // M
-        { top: '40%', left: '10%' }, // A
-        { top: '10%', left: '50%' }, // D
-        { top: '65%', left: '45%' }  // A
+        { top: '20%', left: '15%' }, { top: '25%', left: '80%' }, { top: '70%', left: '10%' },
+        { top: '50%', left: '50%' }, { top: '80%', left: '85%' }, { top: '15%', left: '45%' }, { top: '75%', left: '60%' }
     ];
 
-    // Define o texto inicial do botão
-    actionButton.textContent = buttonTexts[0];
+    // --- FUNÇÕES DO MOTOR DE PARTÍCULAS ---
 
-    actionButton.addEventListener('click', handleButtonClick);
+    function getTextCoordinates(text, fontSize) {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        canvas.width = fontSize * text.length;
+        canvas.height = fontSize * 1.5;
+        ctx.font = `900 ${fontSize}px 'Orbitron'`;
+        ctx.textBaseline = 'middle';
+        ctx.textAlign = 'center';
+        ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+        
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const coordinates = [];
+        for (let y = 0; y < imageData.height; y += 4) { // Pula 4 pixels para otimizar
+            for (let x = 0; x < imageData.width; x += 4) {
+                if (imageData.data[(y * imageData.width + x) * 4 + 3] > 128) {
+                    coordinates.push({ x: x, y: y });
+                }
+            }
+        }
+        return coordinates;
+    }
+
+    function createLetterFromParticles(letter, position) {
+        const letterCoords = getTextCoordinates(letter, 120);
+        const newParticles = [];
+        
+        const viewportX = window.innerWidth * (parseInt(position.left) / 100);
+        const viewportY = window.innerHeight * (parseInt(position.top) / 100);
+
+        letterCoords.forEach(coord => {
+            const p = document.createElement('div');
+            p.classList.add('particle');
+            
+            // Posição inicial: espalhada ao redor do local de formação
+            const initialX = viewportX + (Math.random() - 0.5) * 300;
+            const initialY = viewportY + (Math.random() - 0.5) * 300;
+            
+            p.style.transform = `translate(${initialX}px, ${initialY}px)`;
+            stage.appendChild(p);
+            newParticles.push({ element: p, target: coord });
+
+            // Anima para a posição final da letra
+            setTimeout(() => {
+                p.style.transform = `translate(${viewportX + coord.x}px, ${viewportY + coord.y}px)`;
+            }, 50);
+        });
+        particlesByLetter.push(newParticles);
+    }
+    
+    // --- FUNÇÕES DE ORQUESTRAÇÃO ---
+
+    function gatherAllParticles() {
+        actionButton.style.display = 'none';
+        const finalWordCoords = getTextCoordinates(word, 100);
+        const allParticles = particlesByLetter.flat();
+        
+        // Embaralha para um reagrupamento mais caótico e bonito
+        allParticles.sort(() => Math.random() - 0.5);
+
+        const centerX = window.innerWidth / 2 - (finalWordCoords.reduce((max, p) => Math.max(max, p.x), 0) / 2);
+        const centerY = window.innerHeight / 2 - (finalWordCoords.reduce((max, p) => Math.max(max, p.y), 0) / 2);
+
+        allParticles.forEach((particleData, i) => {
+            if (i < finalWordCoords.length) {
+                const target = finalWordCoords[i];
+                particleData.element.style.transform = `translate(${centerX + target.x}px, ${centerY + target.y}px)`;
+            } else {
+                // Esconde partículas excedentes
+                particleData.element.style.opacity = '0';
+            }
+        });
+
+        setTimeout(() => {
+            finalMessage.style.opacity = '1';
+            finalMessage.style.transform = 'translateY(0)';
+        }, 1500); // Mostra a mensagem final
+    }
 
     function handleButtonClick() {
         if (currentIndex < word.length) {
-            createLetter(word[currentIndex], currentIndex);
+            actionButton.textContent = buttonTexts[currentIndex];
+            createLetterFromParticles(word[currentIndex], letterPositions[currentIndex]);
             currentIndex++;
 
-            // Atualiza o texto do botão para o próximo clique de forma segura
-            if (currentIndex < word.length) {
-                actionButton.textContent = buttonTexts[currentIndex];
+            if (currentIndex === word.length) {
+                actionButton.textContent = "Revelar";
             }
-        }
-
-        if (currentIndex === word.length) {
-            actionButton.style.opacity = '0';
-            actionButton.style.pointerEvents = 'none';
-            setTimeout(gatherLetters, 1200);
+        } else {
+            gatherAllParticles();
         }
     }
 
-    function createLetter(char, index) {
-        const letterSpan = document.createElement('span');
-        letterSpan.className = 'letter';
-        letterSpan.textContent = char;
-        container.appendChild(letterSpan);
-        lettersOnScreen.push(letterSpan);
-
-        // Acessa a posição pelo índice, sem modificar o array original
-        const pos = letterPositions[index];
-        letterSpan.style.top = pos.top;
-        letterSpan.style.left = pos.left;
-    }
-
-    function gatherLetters() {
-        const letterRect = lettersOnScreen[0].getBoundingClientRect();
-        const letterWidth = letterRect.width;
-        const totalWordWidth = letterWidth * word.length;
-        const startLeft = (window.innerWidth - totalWordWidth) / 2;
-
-        lettersOnScreen.forEach((letter, index) => {
-            const targetLeft = startLeft + (index * letterWidth);
-            letter.style.top = '50%';
-            letter.style.left = `${targetLeft}px`;
-            // Garante que a letra termine reta e centralizada verticalmente
-            letter.style.transform = 'translateY(-50%) rotateY(0deg)';
-        });
-        
-        setTimeout(() => {
-            secondaryMessage.textContent = 'agora?';
-            secondaryMessage.style.opacity = '1';
-        }, 2000); 
-    }
+    actionButton.addEventListener('click', handleButtonClick);
 });
