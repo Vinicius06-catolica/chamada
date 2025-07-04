@@ -1,0 +1,103 @@
+:root {
+    --bg-color: #0c0a09;
+    --primary-color: #00aaff;
+    --shadow-color: #00aaff80;
+    --glow-color: #00eaff;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Orbitron', sans-serif;
+    background-color: var(--bg-color);
+    color: var(--primary-color);
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    /* Adiciona perspectiva para o efeito 3D funcionar melhor no container */
+    perspective: 800px;
+}
+
+#container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#actionButton {
+    padding: 15px 30px;
+    font-size: 1.5rem;
+    font-family: 'Orbitron', sans-serif;
+    cursor: pointer;
+    background-color: transparent;
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+    border-radius: 10px;
+    text-transform: uppercase;
+    box-shadow: 0 0 10px var(--shadow-color), inset 0 0 10px var(--shadow-color);
+    transition: all 0.3s ease;
+    animation: pulse 2s infinite;
+    z-index: 100;
+}
+
+#actionButton:hover {
+    background-color: var(--primary-color);
+    color: var(--bg-color);
+    box-shadow: 0 0 25px var(--glow-color), inset 0 0 10px var(--glow-color);
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); box-shadow: 0 0 10px var(--shadow-color), inset 0 0 10px var(--shadow-color); }
+    50% { transform: scale(1.05); box-shadow: 0 0 25px var(--glow-color), inset 0 0 15px var(--glow-color); }
+    100% { transform: scale(1); box-shadow: 0 0 10px var(--shadow-color), inset 0 0 10px var(--shadow-color); }
+}
+
+.letter {
+    position: absolute;
+    font-size: 5rem;
+    font-weight: 700;
+    color: var(--glow-color);
+    text-shadow: 
+        2px 2px 5px rgba(0, 0, 0, 0.5), /* Sombra para profundidade */
+        0 0 5px var(--primary-color),
+        0 0 10px var(--primary-color),
+        0 0 20px var(--glow-color),
+        0 0 40px var(--glow-color);
+    opacity: 0;
+    /* A letra começa com rotação e um pouco maior */
+    transform: scale(1.2) rotateY(60deg); 
+    animation: fadeIn3D 0.7s forwards; /* Animação de entrada */
+    transition: top 1.5s cubic-bezier(0.68, -0.55, 0.27, 1.55), 
+                left 1.5s cubic-bezier(0.68, -0.55, 0.27, 1.55),
+                transform 1.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+    user-select: none;
+}
+
+/* Animação de entrada 3D */
+@keyframes fadeIn3D {
+    to {
+        opacity: 1;
+        transform: scale(1) rotateY(0deg);
+    }
+}
+
+#secondary-message {
+    position: absolute;
+    top: 65%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--glow-color);
+    text-shadow: 
+        0 0 5px var(--primary-color),
+        0 0 10px var(--primary-color),
+        0 0 20px var(--glow-color);
+    opacity: 0;
+    transition: opacity 1s ease-in-out;
+}
